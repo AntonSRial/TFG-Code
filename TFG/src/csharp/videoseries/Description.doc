@@ -1,0 +1,66 @@
+/**
+@defgroup csharp_skeletontracking_console_video Skeleton Tracking on a Sequence of Images - C# 
+\section csharp_skeletontracking_console_video_intro Introduction
+The Skeleton Tracking C# binding provides a convenient interface to perform the following tasks:
+- Load the DNN model onto the target compute device (currently Intel CPU and Intel GPU are supported).
+- Perform inference on an input image (currently only 3 channel 8-bit images of BGR format are supported)
+- Obtain the results from the inference request as a list of skeleton keypoints and their image coordinates.
+- Track skeletons between consecutive images in a video sequence
+
+\section csharp_skeletontracking_console_video_pre Pre-requisites
+- Currently this application supports an Intel CPU as well as GPU options with an 18-point Skeleton Tracking
+model.
+- The required FP32 and FP16 models for CPU and GPU respectively should be available as resources along with
+the sample executable.
+- The model needs to be in the default models directory (@ref folder_structure)
+- The image files need to be available in the default images folder (@ref folder_structure)
+ 
+
+\section csharp_skeletontracking_console_video_explanation Explanation
+This line initializes logging in cubemos SDK and only needs to be done once.
+\code
+    // Initialize logging to output all messages with severity level INFO or higher to the console
+    Cubemos.Api.InitialiseLogging(Cubemos.LogLevel.CM_LL_INFO, bWriteToConsole: true);
+\endcode 
+The following code takes care of loading the required DNN model onto the target device and initializing the cubemos Skeleton Tracking API: \n
+\code
+    
+    // The activation key path can be set to any writable folder, here we will look for it in the %%LOCALAPPDATA%\\Cubemos\\SkeletonTracking\\license folder.
+    
+    // Create cubemos Skeleton tracking Api handle and specify folder containing the valid cubemos activation key file     
+    Cubemos.SkeletonTracking.Api skeletontrackingApi = new Cubemos.SkeletonTracking.Api(Common.DefaultLicenseDir());                
+    // Initialise cubemos DNN framework with the required deep learning model and the target compute device
+    // FP32 model is necessary for the CPU device
+    skeletontrackingApi.LoadModel(Cubemos.Target_Compute_Device.CM_TCD_CPU, Common.DefaultModelDir() + "\\fp32\\skeleton-tracking.cubemos");        
+\endcode    
+
+Once the Skeleton Tracking pipeline is initialized, the inference can be called on an image loaded from the
+image directory after which the results can be extracted into a list: 
+\code 
+    // Set network height for better accuracy
+    int networkHeight = 256;
+    System.Collections.Generic.List<Cubemos.SkeletonTracking.Api.SkeletonKeypoints> skeletons;
+    // Set a unique pipeline id for this images sequence to maintain tracking history between frames of the same sequence
+    int pipelineID = 1;
+    // Send inference request to get the skeletons and update the tracking history
+    skeletontrackingApi.RunInference(ref image1, networkHeight, out lastResult, pipelineID);
+\endcode
+
+The skeletons are a list of image coordinates of the keypoints detected for each person inside the input
+image. Below code outputs the skeletons counter and their tracking ids. \n
+
+\code
+    // Here comes the code working with the skeletons
+    Console.WriteLine("# Persons detected: " + skeletons.Count);
+    for (int skeleton_index = 0; skeleton_index < lastResult.Count; skeleton_index++) {
+        var skeleton = lastResult[skeleton_index];
+        // Every skeleton contains a tracking id that is assigned to every new person detected in the video and follows them until they leave the camera view or until the tracking gets lost
+        Console.WriteLine("Skeleton #" + skeleton_index +  " Tracking ID " + skeleton.id);
+    }
+
+\endcode
+
+In order to get started with tracking using saved images and cubemos csharp wrapper, check the full source code provided in
+\%CUBEMOS_SKEL_SDK%\samples\csharp\videoseries\Program.cs \n
+For further example on using the skeleton keypoints results refer to \ref csharp_skeletontracking_demo \n
+*/

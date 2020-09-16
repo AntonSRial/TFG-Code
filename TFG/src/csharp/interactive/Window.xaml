@@ -1,0 +1,429 @@
+﻿<Window x:Class="Cubemos.Samples.CaptureWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" WindowStartupLocation="CenterOwner"
+        xmlns:local="clr-namespace:Cubemos.Samples"
+        Closing="control_Closing"
+        Title="Skeleton Tracking"
+        WindowState="Maximized"
+        Padding="5">
+
+    <Grid>
+        <Viewbox Grid.ColumnSpan="2">
+            <StackPanel Orientation="Horizontal" Grid.RowSpan="2">
+                <Border BorderThickness="1"
+                    Margin="0,0,5,0"
+                    BorderBrush="#16379B">
+                    <TabPanel Background="White" Width="250">
+                        <Grid>
+                            <StackPanel  Width="250">
+                                <Menu VerticalAlignment="Top" Height="20" Background="#16379B" IsHitTestVisible="False" Foreground="White">Available Cameras</Menu>
+                                <Button x:Name="refreshDevices"
+                                                    FontFamily="Segoe MDL2 Assets" Content="&#xE72C;"
+                                                    FontSize="12"
+                                                    Background="#16379B"
+                                                    Foreground="White"
+                                                    BorderBrush="Transparent"
+                                                    Click="ButtonRefreshDevices_Click"
+                                                    HorizontalAlignment="Right"       
+                                                    Height ="20" Width="22"
+                                                    Margin="0,-20,-2,0" />
+                                <Border Margin="10,10,10,5"
+                                    BorderBrush="#16379B"
+                                    BorderThickness="1" Height="40">
+                                    <TabPanel Margin="0,0,0,0" >
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Margin="10" >Intel RealSense Camera</TextBlock>
+                                            <ToggleButton x:Name="toggleStartStop"
+                                                          ToolTip="Start/stop the image acquisition and skeleton tracking pipeline"
+                                                        Margin="15,5,0,0"
+                                                        Foreground="#16379B"
+                                                        FontSize="20"
+                                                          Height="25"
+                                                          Width="40"
+                                                      BorderBrush="#16379B"
+                                                      FontFamily="Segoe MDL2 Assets" Content="&#xF5B0;"
+                                                      Click="ToggleStartStop_Click" Background="{x:Null}" />
+                                        </StackPanel>
+                                    </TabPanel>
+                                </Border>
+                                <Menu VerticalAlignment="Top" IsHitTestVisible="False" Height="20" Margin="0,20,0,0" Background="#16379B" Foreground="White">View Options</Menu>
+                                <Border Margin="10,10,10,5"
+                                                BorderBrush="#16379B"
+                                                BorderThickness="1" Height="135">
+                                    <TabPanel Margin="0,0,0,0" >
+                                        <StackPanel ToolTip="Turn on/off the given options to view onto the image window" Height="125" VerticalAlignment="Bottom" >
+                                            <CheckBox Name="isEnableTracking" IsChecked="True" 
+                                                          Checked="cbEnable_Tracking"
+                                                          Unchecked="cbEnable_Tracking"
+                                                          Margin="5">Enable Tracking</CheckBox>
+                                            <CheckBox Name="isSkeletonOverlay" IsChecked="True" 
+                                                          Checked="cbRendering_SkeletonOverlay"
+                                                          Unchecked="cbRendering_SkeletonOverlay"
+                                                          Margin="5">Skeleton Overlays</CheckBox>
+                                            <CheckBox Name="isShow3DCoordinates" 
+                                                      IsChecked="True"
+                                                          Checked="cbRendering_ShowCoordinates"
+                                                          Unchecked="cbRendering_ShowCoordinates"
+                                                          Margin="5">3D Coordinates of Joints</CheckBox>
+                                            <CheckBox Name="isOnlySkeletons"
+                                                          Checked="cbRendering_OnlySkeletons"
+                                                          Unchecked="cbRendering_OnlySkeletons"
+                                                          Margin="5">Hide Persons</CheckBox>
+                                            <CheckBox Name="isRenderDepthImage" 
+                                                          Checked="cbRendering_DepthMapOverlay"
+                                                          Unchecked="cbRendering_DepthMapOverlay"
+                                                          Margin="5">Depth Map</CheckBox>
+                                        </StackPanel>
+                                    </TabPanel>
+                                </Border>
+                                <Menu VerticalAlignment="Top" IsHitTestVisible="False" Height="20" Margin="0,20,0,0" Background="#16379B" Foreground="White">Status</Menu>
+                                <Border Margin="10,10,10,5"
+                                                BorderBrush="#16379B"
+                                                BorderThickness="1">
+                                    <TabPanel Margin="0,0,0,0" >
+                                        <StackPanel Orientation="Vertical">
+                                            <TextBlock x:Name="acquisition_status"
+                                                       Margin="10,5,5,5"
+                                                       FontSize="12"><Run Text="Acquisiton Status:"/></TextBlock>
+                                            <TextBlock Name="fps_output"
+                                                       Margin="10,5,5,5"
+                                                       FontSize="12"> Frame rate:</TextBlock>
+                                            <TextBlock Name="person_count"
+                                                       Margin="10,5,5,5"
+                                                       FontSize="12"> Person Count:</TextBlock>
+                                        </StackPanel>
+                                    </TabPanel>
+                                </Border>
+                                <Border Margin="10,350,10,10">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Height="86" Margin="30,0">
+                                        <TextBlock Text="cubemos"
+                                               FontFamily="Avenir"
+                                               Foreground="#16379B"
+                                               Canvas.Left="450" Canvas.Top="309" FontSize="40" Margin="0,34,0,0"/>
+                                        <Rectangle Fill="#16379B" Width="10" Height="10"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"
+                                                    Opacity="1" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </TabPanel>
+                </Border>
+                <Grid>
+                    <StackPanel VerticalAlignment="Top">
+                        <Border BorderThickness="1" 
+                                    BorderBrush="#16379B"
+                                    Height="722"
+                                    Width="1282">
+                            <Grid>
+                                <Image x:Name="imgColor"
+                                       Width="1280"
+                                       Height="720"
+                                       Panel.ZIndex="1"
+                                       HorizontalAlignment="Left"
+                                       MouseLeftButtonDown="ImgColor_MouseLeftButtonDown"/>
+                                <Image x:Name="imgDepth" 
+                                        Height="720"
+                                        Width="1280"
+                                        HorizontalAlignment="Left"
+                                        Panel.ZIndex="0"
+                                       Opacity="0.5"/>
+                                <Image x:Name="usageGuideImage" 
+                                        Height="720" 
+                                        Width="1280" 
+                                        HorizontalAlignment="Left"
+                                        Panel.ZIndex="-1" 
+                                       Source="dep/res/usageGuide.png"/>
+                                <Canvas x:Name="Cnv" Panel.ZIndex="2"                                            
+                                            HorizontalAlignment="Left"
+                                            Height="720"
+                                            Width="1280"/>
+                                <Canvas x:Name="Cnv2" Background="White" Panel.ZIndex="1" Width="1280">
+                                    <TextBlock Text="cubemos"
+                                               FontFamily="Avenir"
+                                               Foreground="#16379B"
+                                               Canvas.Left="450" Canvas.Top="309" FontSize="100"/>
+                                    <Rectangle Fill="#16379B" Width="25" Height="25"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Opacity="1" Canvas.Left="850" Canvas.Top="320" />
+                                    <TextBlock x:Name="loadingText"
+                                        Text="Loading..."
+                                               FontFamily="Avenir"
+                                               Foreground="#16379B"
+                                        Canvas.Left="600" Canvas.Top="420" FontSize="30"
+                                        Visibility="Hidden"/>
+                                </Canvas>
+                                <Menu VerticalAlignment="Top" Margin="0,0,0,0" Panel.ZIndex="100"
+                                          Height="20" Background="#16379B" Foreground="White">Image Display
+                                    <Grid>
+                                        <Button x:Name="buttonScreenShot"
+                                            FontFamily="Segoe MDL2 Assets" Content="&#xE114;"
+                                            FontSize="13.5"
+                                            Background="#16379B"
+                                            Foreground="White"
+                                            BorderBrush="Transparent"
+                                            Click="ButtonScreenShot_Click"
+                                            Height="20" Width="20"
+                                             Margin="1100,0,0,0"/>
+                                        <ToggleButton x:Name="toggleHelp"
+                                                    FontFamily="Segoe MDL2 Assets" Content="&#xE11B;"
+                                                    FontSize="11"
+                                                    Background="#16379B"
+                                                      BorderBrush="Transparent"
+                                                      Foreground="White"
+                                                    Click="ToggleButtonHelp_Click"
+                                                    Margin="1050,0,0,0" Width="20" Height="20"/>
+                                        <ToggleButton x:Name="toggleButtonSettings"
+                                                FontFamily="Segoe MDL2 Assets" Content="&#xE713;"
+                                                FontSize="12"
+                                                Background="#16379B"
+                                                Foreground="White"
+                                                BorderBrush="Transparent"
+                                                Click="ToggleButtonSettings_Click" Width="20" Height="20"
+                                                  Margin="1150,0,0,0"/>
+                                    </Grid>
+                                </Menu>
+                            </Grid>
+                        </Border>
+                        <Grid>
+                            <TabPanel Background="#16379B"
+                                      Margin="0,0,0,0">
+                                <Border BorderBrush="#16379B"
+                                        BorderThickness="0.5">
+                                    <StackPanel>
+                                        <Menu VerticalAlignment="Top"
+                                          Height="20" Background="#16379B" Foreground="White" IsHitTestVisible="False">Output Log</Menu>
+                                        <TextBox x:Name="logTextBox"
+                                        Foreground="Black"
+                                        FontFamily="Consolas"
+                                        ScrollViewer.VerticalScrollBarVisibility="Visible"
+                                        ScrollViewer.CanContentScroll="True"
+                                        TextWrapping="Wrap"
+                                        IsReadOnly="True" HorizontalAlignment="Left" 
+                                        BorderBrush="Transparent"
+                                        Width="1280" 
+                                        Height="100" />
+                                    </StackPanel>
+                                </Border>
+                            </TabPanel>
+                        </Grid>
+                    </StackPanel>
+                    <TabPanel x:Name="settingsPanel"
+                              VerticalAlignment="Top"
+                                  Margin="980,21,0,0"
+                                  Width="300" Height="720"
+                                  Visibility="Visible"
+                                  Background="LightBlue"
+                                  Opacity="0.8">
+                        <StackPanel Width="300">
+                            <Expander Header="Camera Selection" 
+                                      BorderBrush="#16379B"
+                                      IsExpanded="True"
+                                      Margin="10">
+                                <ComboBox x:Name="camera_source"
+                                    SelectionChanged="Camera_source_SelectionChanged" 
+                                          ToolTip="Select the available cameras based on their serial number"
+                                    Margin="10" />
+                            </Expander>
+                            <Expander Header="Acquisition Options" 
+                                      BorderBrush="#16379B"
+                                      IsExpanded="True"
+                                      Margin="10">
+                                <ComboBox x:Name="resolutionOptionBox"
+                                          ToolTip="Set the resolution for acquisition of the image from the camera"
+                                    Margin="10" />
+                            </Expander>
+                            <Expander x:Name="rgb_options_expander"
+                                          Header="RGB Camera Options"
+                                          BorderBrush="#16379B"
+                                          IsExpanded="True"
+                                          Margin="10">
+                                <Grid x:Name="rgb_sensor_options">
+                                    <TextBlock Text="Backlight Compensation" 
+                                               Margin="10"/>
+                                    <CheckBox x:Name="rgbBacklightCompensation"
+                                              HorizontalAlignment="Center"
+                                              Checked="RgbBacklightCompensation_Checked"
+                                              Unchecked="RgbBacklightCompensation_Checked"
+                                              Margin="180,10,10,10"/>
+                                    <TextBlock Text="Brightness"
+                                               Margin="10,30,10,10" />
+                                    <Slider x:Name="rgbBrightness"
+                                            Cursor="Arrow"
+                                            ValueChanged="RgbBrightness_ValueChanged"
+                                            Margin="180,30,10,10"/>
+                                </Grid>
+                            </Expander>
+                            <Expander x:Name="depth_sensor_options_expander"
+                                      Header="Depth Options"
+                                      BorderBrush="#16379B"
+                                      IsExpanded="True"
+                                      Margin="10">
+                                <Grid x:Name="depth_sensor_options">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Preset" Margin="5"/>
+                                    <ComboBox Name="presetOptionBox"
+                                              Grid.Row="0"
+                                              Grid.Column="1"
+                                              SelectionChanged="PresetOptionBox_SelectionChanged"
+                                              Margin="5"/>
+                                    <TextBlock Text="Emitter Enabled"
+                                               ToolTip="Enable/disable the emitter for the realsense device"
+                                               Grid.Row="1"
+                                               Margin="5"/>
+                                    <CheckBox x:Name="depthEmitterEnabled"
+                                              Grid.Row="1"
+                                              Grid.Column="1"  HorizontalAlignment="Center"
+                                              IsChecked="True"
+                                              Checked="DepthEmitterEnabled_Checked"
+                                              Unchecked="DepthEmitterEnabled_Checked"
+                                              ToolTip="Set the power of the laser emitter."
+                                              Margin="5"/>
+                                    <TextBlock Text="Laser Power"
+                                               Grid.Row="2"
+                                               Margin="5"/>
+                                    <Slider x:Name="laserPower"
+                                            Grid.Row="2"
+                                            Grid.Column="1"
+                                            Minimum="0"
+                                            Maximum="50" Cursor="Arrow" TickPlacement="BottomRight"
+                                            ValueChanged="LaserPower_ValueChanged"
+                                            Margin="5"/>
+
+                                    <Expander Grid.Row="3" Grid.ColumnSpan="2" x:Name="post_processing_options_expander"
+                                              Header="Post-Processing Options"
+                                              Margin="5"
+                                              BorderBrush="DarkGray"
+                                              ToolTip="Pose processing options for the realsense depth map"
+                                              IsExpanded="True">
+                                        <Grid x:Name="post_processing_options">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+
+                                            <Expander Grid.Row="0" Grid.ColumnSpan="2" x:Name="spatial_filter_expander">
+                                                <Expander.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Margin="5,0,5,0">Spatial Filter</TextBlock>
+                                                        <CheckBox Name="spatialFilter" VerticalAlignment="Center" Checked="spatialFilter_Checked" Unchecked="spatialFilter_Checked" />
+                                                    </StackPanel>
+                                                </Expander.Header>
+                                                <Grid x:Name="spatial_filter_options">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <DockPanel Grid.Row="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5">
+                                                        <Label DockPanel.Dock="Left">Magnitude:</Label>
+                                                        <TextBox Text="{Binding ElementName=slSpatialMagnitude, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                                                        <Slider Minimum="1" Maximum="5" Value="1" TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="True"  Name="slSpatialMagnitude" ValueChanged="spatialFilterMagnitude_ValueChanged" />
+                                                    </DockPanel>
+
+                                                    <DockPanel Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5">
+                                                        <Label DockPanel.Dock="Left">Smooth Alpha:</Label>
+                                                        <TextBox Text="{Binding ElementName=slSpatialSmoothAlpha, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                                                        <Slider Minimum="0.25" Maximum="1" Value="0.5" TickPlacement="BottomRight" TickFrequency="1" Name="slSpatialSmoothAlpha" ValueChanged="spatialFilterSmoothAlpha_ValueChanged" />
+                                                    </DockPanel>
+
+                                                    <DockPanel Grid.Row="2" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5">
+                                                        <Label DockPanel.Dock="Left">Smooth Delta:</Label>
+                                                        <TextBox Text="{Binding ElementName=slSpatialSmoothDelta, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                                                        <Slider Minimum="1" Maximum="50" Value="1" TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="True" Name="slSpatialSmoothDelta" ValueChanged="spatialFilterSmoothDelta_ValueChanged" />
+                                                    </DockPanel>
+                                                </Grid>
+                                            </Expander>
+
+                                            <Expander Grid.Row="1" Grid.ColumnSpan="2" x:Name="temporal_filter_expander">
+                                                <Expander.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Margin="5,0,5,0">Temporal Filter</TextBlock>
+                                                        <CheckBox Name="temporalFilter" VerticalAlignment="Center" Checked="temporalFilter_Checked" Unchecked="temporalFilter_Checked"/>
+                                                    </StackPanel>
+                                                </Expander.Header>
+                                                <Grid x:Name="temporal_filter_options">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <DockPanel Grid.Row="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5">
+                                                        <Label DockPanel.Dock="Left">Smooth Alpha:</Label>
+                                                        <TextBox Text="{Binding ElementName=slTemporalSmoothAlpha, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                                                        <Slider Minimum="0" Maximum="1" Value="0.4" TickPlacement="BottomRight" TickFrequency="1" Name="slTemporalSmoothAlpha" ValueChanged="temporalFilterSmoothAlpha_ValueChanged" />
+                                                    </DockPanel>
+
+                                                    <DockPanel Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5">
+                                                        <Label DockPanel.Dock="Left">Smooth Delta:</Label>
+                                                        <TextBox Text="{Binding ElementName=slTemporalSmoothDelta, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                                                        <Slider Minimum="1" Maximum="100" Value="20" TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="True" Name="slTemporalSmoothDelta" ValueChanged="temporalFilterSmoothDelta_ValueChanged" />
+                                                    </DockPanel>
+                                                </Grid>
+                                            </Expander>
+
+                                        </Grid>
+                                    </Expander>
+                                </Grid>
+                            </Expander>
+                            <Expander Header="Computation Options" 
+                                          BorderBrush="#16379B"
+                                          IsExpanded="True"
+                                          Margin="10">
+                                <StackPanel>
+                                    <ComboBox Name="computationBackend" Margin="5" 
+                                              ToolTip="Select the target computation device for pose estimation">
+                                        <ComboBoxItem IsSelected="True">Target Device: Intel CPU</ComboBoxItem>
+                                        <ComboBoxItem>Target Device: Intel GPU</ComboBoxItem>
+                                        <ComboBoxItem>Target Device: Intel Myriad</ComboBoxItem>
+                                    </ComboBox>
+                                    <TextBlock x:Name="textBlock1"
+                                    Text="Network input size: 128"
+                                    Margin="5"/>
+                                    <Slider x:Name="networkSlider"
+                                            ToolTip="Select the network size for pose estimation. Smaller size leads to faster but inaccurate computation and vice versa."
+                                        Value="192"
+                                        Minimum="128"
+                                        Maximum="320"
+                                        TickFrequency="16"
+                                        IsSnapToTickEnabled="True"
+                                        ValueChanged="NetworkSlider_ValueChanged" SmallChange="16" TickPlacement="BottomRight" LargeChange="16" Margin="5"/>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </TabPanel>
+                </Grid>
+            </StackPanel>
+        </Viewbox>
+    </Grid>
+</Window>
+

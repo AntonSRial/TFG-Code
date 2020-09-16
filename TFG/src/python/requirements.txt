@@ -1,0 +1,4 @@
+cubemos-core>=2.2.0
+cubemos-skel>=2.3.0
+opencv-python>=4.1.0
+numpy>=1.18.2

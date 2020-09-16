@@ -1,0 +1,48 @@
+/**
+@defgroup csharp_skeletontracking_console_rs Skeleton Estimation on Intel&reg; RealSense&trade; RGB Image - C# 
+\section csharp_skeletontracking_console_rs_intro Introduction
+The Skeleton Tracking C# binding provides a convenient interface to perform the following tasks:
+- Load the DNN model onto the target compute device (currently Intel CPU and Intel GPU are supported).
+- Perform inference on the input image (currently only 3 channel 8-bit images of BGR format are supported)
+- Obtain the results from the inference request as a list of skeleton keypoints and their image coordinates.
+
+\section csharp_skeletontracking_console_rs_pre Pre-requisites
+- Currently this application supports an Intel CPU as well as GPU options with an 18-point Skeleton Estimation
+model.
+- The required FP32 and FP16 models for CPU and GPU respectively should be available as resources along with
+the sample executable.
+- The models need to be in the default models directory (@ref folder_structure). 
+- An Intel&reg; RealSense&trade; device needs to be connected to the host-pc.
+
+\section csharp_skeletontracking_console_rs_explanation Explanation
+This line initializes logging in cubemos SDK and only needs to be done once.
+\code
+    // Initialize logging to output all messages with severity level ERROR or higher to the console
+    Cubemos.Api.InitialiseLogging(Cubemos.LogLevel.CM_LL_ERROR, bWriteToConsole: true);
+\endcode 
+The following code takes care of loading the required DNN model onto the target device and initializing the cubemos Skeleton Tracking API: \n
+\code
+    
+    Cubemos.SkeletonTracking.Api skeletontrackingApi = new Cubemos.SkeletonTracking.Api(Common.DefaultLicenseDir());               
+    // Initialise cubemos DNN framework with the required deep learning model and the target compute device
+    // FP32 model is necessary for the CPU device
+    skeletontrackingApi.LoadModel(Cubemos.Target_Compute_Device.CM_TCD_CPU, Common.DefaultModelDir() + "\\fp32\\skeleton-tracking.cubemos");        
+\endcode
+
+Once the Skeleton Estimation pipeline is initialized, the inference can be called on an image from the camera after which the results can be extracted into a list: 
+\code 
+    // Set network height to 128 for better runtime performance
+    int networkHeight = 128;
+    System.Collections.Generic.List<Cubemos.SkeletonTracking.Api.SkeletonKeypoints>skeletonKeypoints;
+
+    // Send inference request and get the skeletons
+    skeletontrackingApi.RunSkeletonTracking(ref inputImage, networkHeight, out skeletonKeypoints);
+
+\endcode
+
+The skeletons are a list of image coordinates of the keypoints detected for each person inside the input image.
+
+In order to get started with image acquisiton from Intel&reg; RealSense&trade;, check the full source code of this sample provided in
+\%CUBEMOS_SKEL_SDK%\samples\csharp\realsense\Program.cs \n
+For further example on using the skeleton keypoints results refer to \ref csharp_skeletontracking_demo \n
+*/

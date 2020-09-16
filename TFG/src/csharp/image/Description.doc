@@ -1,0 +1,55 @@
+
+/**
+@defgroup csharp_skeletontracking_console_img Skeleton Estimation on a local image - C#
+\section Introduction
+The Skeleton Tracking C# binding provides a convenient interface to perform the following tasks:
+- Load the DNN model onto the target compute device (currently Intel CPU and Intel GPU are supported).
+- Perform inference on the input image (currently only 3 channel 8-bit images of BGR format are supported)
+- Obtain the results from the inference request as a list of skeleton keypoints and their image coordinates.
+
+\section Pre-requisites
+- Currently this application supports an Intel CPU as well as GPU options with an 18-point Skeleton Estimation
+model.
+- The required FP32 and FP16 models for CPU and GPU respectively should be available as resources along with
+the sample executable.
+- The models need to be in the default models directory. The default models directory on Windows is %%LOCALAPPDATA%\\Cubemos\\SkeletonTracking\\models
+
+- The image file needs to be available in the default images folder. The default images folder is %%LOCALAPPDATA%\\Cubemos\\SkeletonTracking\\res\\images. You can change the image path to test the sample with your own image.
+
+\section Explanation
+This line initializes logging in cubemos SDK and only needs to be done once.
+\code
+     // Output all messages with severity level INFO or higher to the console
+     Cubemos.Core.Api.InitialiseLogging(Cubemos.Core.LogLevel.CM_LL_INFO, bWriteToConsole: true); 
+\endcode The following code takes care of loading the required DNN model onto the target
+device and initializing the cubemos Skeleton Tracking API: \n
+\code    
+    // The activation key path can be set to any writable folder containing the cubemos_license.json file, here we will use the %%LOCALAPPDATA%\\Cubemos\\SkeletonTracking\\license folder, which is created by the post_installation.bat script for Windows systems.    
+    // Create cubemos Skeleton tracking Api handle and specify the valid cubemos activation key file folder    
+    Cubemos.SkeletonTracking.Api skeletontrackingApi = new Cubemos.SkeletonTracking.Api(Common.DefaultLicenseDir());
+    
+    // Initialise cubemos DNN framework with the required deep learning model and the target compute device
+    // FP32 model is necessary for the CPU device
+    skeletontrackingApi.LoadModel(Cubemos.Target_Compute_Device.CM_TCD_CPU, Common.DefaultModelDir() + "\\fp32\\skeleton-tracking.cubemos");     
+\endcode
+
+Once the Skeleton Tracking pipeline is initialized, the inference can be called on an any image after which the results can be extracted into a list: 
+\code 
+    int networkHeight = 128;
+    System.Collections.Generic.List<Cubemos.SkeletonTracking.Api.SkeletonKeypoints> skeletonKeypoints;
+    // Send inference request and get the skeletons
+    skeletontrackingApi.RunInference(ref inputImage, networkHeight, out skeletonKeypoints);
+\endcode
+
+The skeletons are a list of image coordinates of the keypoints detected for each person inside the input
+image. Below code outputs the skeletons counter. \n
+
+\code
+    // Here comes the code working with the skeletons
+    Console.WriteLine("# Persons detected: " + skeletonKeypoints.Count);
+\endcode
+
+In order to get started with using Skeleton Tracking on saved images and cubemos csharp wrapper, check the full source code of this sample provided in
+\%CUBEMOS_SKEL_SDK%\samples\csharp\image\Program.cs \n
+For further example on using the skeleton keypoints results refer to \ref csharp_skeletontracking_demo \n
+*/

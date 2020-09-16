@@ -1,0 +1,81 @@
+
+/**
+@defgroup cpp_realsense Skeleton Tracking on Intel&reg; RealSense&trade; Streams - C++
+\section cpp_realsense_intro Introduction
+This sample demonstrates the usage of the Intel&reg; RealSense&trade; API and the C API for cubemos skeleton tracking. The skeletons are a list of image coordinates of the keypoints
+detected for each person inside the input image. Based on these keypoints, the overlays are drawn and finally rendered
+to the output image which is then displayed to the user.
+
+The Skeleton Tracking C++ API provides a convenient interface to perform the following tasks:
+- Load the DNN model onto the target compute device (currently Intel CPU and Intel GPU are supported).
+- Perform inference on the input image (3 channel 8-bit images of BGR format)
+- Obtain the results as a list of image coordinates of the skeleton keypoints.
+- Track persons between consecutive frames with an associated skeleton ID.
+
+\section cpp_realsense_pre Pre-requisites
+- Currently this application supports an Intel CPU as well as GPU options with an 18-point Skeleton Tracking
+model.
+- The required FP32 and FP16 models for CPU and GPU respectively should be available as resources along with
+the sample executable.
+- The demo requires a connected Intel&reg; RealSense&trade; D415/D435 Camera in order to execute successfully.
+
+\section cpp_realsense_explanation Explanation
+The following code takes care of loading the required DNN model onto the target device and initializing the
+cubemos Skeleton-Tracking API. The models are loaded from the default models folder and the activation key from the license directory (@ref folder_structure). \n
+\code
+	retCode = cm_skel_create_handle(&handle, default_license_dir().c_str());
+	retCode = cm_skel_load_model( handle, enInferenceMode, (default_model_dir() + "./fp32/skeleton-tracking.cubemos").c_str()); \endcode
+
+The cubemos API supports both synchronous and asynchronous inference requests. This sample demonstrates the usage of the
+async requests that can be made interleaved with image acquisition or other processing tasks.
+
+Once the skeleton tracking pipeline is initialized, the skeleton keypoints can be extracted for the first frame:
+\code
+	// Create an image object from the frame
+	CM_Image imageLast = {capturedFrame.data, CM_UINT8, capturedFrame.cols, capturedFrame.rows, capturedFrame.channels(),
+	(int)capturedFrame.step[0], CM_HWC
+
+	// Prepare results buffers
+    CM_SKEL_Buffer_Ptr skeletonsPresent = create_skel_buffer();
+    CM_SKEL_Buffer_Ptr skeletonsLast = create_skel_buffer();
+    CM_ReturnCode retCodeFirstFrame = cm_skel_estimate_keypoints(handle, skeletRequestHandle, &imageLast, nHeight, skeletonsLast.get());
+\endcode
+
+
+For every following frame we repeat the cubemos image creation and fetching the results:
+\code
+	CM_Image imagePresent = {capturedFrame.data, CM_UINT8, capturedFrame.cols, capturedFrame.rows, 
+	capturedFrame.channels(), (int)capturedFrame.step[0], CM_HWC};
+	
+	retCode = cm_skel_estimate_keypoints(handle, skeletRequestHandle, &imagePresent, nHeight, skeletonsPresent.get());
+\endcode
+
+After we have the results for the second frame we can track the skeletons from the previous frame in the current one. 
+All successfully tracked skeletons now have a consistent id between consecutive frames.
+\code
+	cm_skel_update_tracking_id(handle, skeletonsLast.get(), skeletonsPresent.get());
+\endcode
+
+The IDs are used in the renderSkeletons() function in order to render it near each tracked skeleton.
+\code
+	// the skeletonsPresent is passed to the skeletons_buffer over the renderSkeletons() arguments
+	for (int i = 0; i < skeletons_buffer->numSkeletons; i++) {
+        int id = skeletons_buffer->skeletons[i].id;
+		for (size_t keypointIdx = 0; keypointIdx < skeletons_buffer->skeletons[i].numKeyPoints; keypointIdx++) {
+            const cv::Point2f keyPoint(skeletons_buffer->skeletons[i].keypoints_coord_x[keypointIdx],
+                                       skeletons_buffer->skeletons[i].keypoints_coord_y[keypointIdx]);
+		    ...
+\endcode 
+
+The results are then rendered on an OpenCV window with the 3D coordinates which are calculated using the Intel&reg; RealSense&trade; API and the image coordinates obtained from the cubemos API calls. The following function in the demo cpp_realsense.cpp shows how the 3D point can be extracted from the depthmap and the image coordinate of the skeleton keypoint obtained from cm_skel_estimate_keypoints()
+\code
+	cmPoint get_skeleton_point_3d(rs2::depth_frame const& depthFrame, int x, int y);
+\endcode
+
+At the end of the application we delete the request and API handles:
+\code
+	// release the memory which is managed by the cubemos framework
+	cm_skel_destroy_handle(&handle);
+\endcode
+ \n
+*/

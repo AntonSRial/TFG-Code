@@ -1,0 +1,98 @@
+
+/**
+@defgroup csharp_skeletontracking_demo Skeleton Tracking on Intel&reg; RealSense&trade; Streams - C# 
+\section csharp_skeletontracking_demo_introduction Introduction
+The Skeleton Tracking C# binding provides a convenient interface to perform the following tasks: 
+- Load the DNN model onto the target compute device (currently Intel CPU and Intel GPU are supported).
+- Perform inference on the input image (currently only 3 channel 8-bit images of BGR format are supported)
+- Obtain the results from the inference request as a list of skeleton keypoints and their image coordinates.
+
+\section csharp_skeletontracking_demo_pre Pre-requisites
+- Currently this application supports an Intel CPU as well as GPU options with an 18-point Skeleton Tracking model. 
+- The required FP32 and FP16 models for CPU and GPU respectively should be available as resources along with the sample executable.
+- The demo also requires a connected Intel&reg; RealSense&trade; D415 or D435.
+    
+\section csharp_skeletontracking_demo_explanation Explanation
+This line initializes logging in cubemos SDK and only needs to be done once.
+\code
+// Initialize logging to output all messages with severity level INFO or higher to the console and to the file located in the default logs directory (@ref folder_structure).
+     Cubemos.Api.InitialiseLogging(Cubemos.LogLevel.CM_LL_INFO, bWriteToConsole: true, Common.DefaultLogDir());
+\endcode 
+The following code takes care of loading the required DNN model onto the target device and initializing the cubemos Skeleton Tracking API: \n
+\code    
+    // The activation key path can be set to any writable folder, containing a cubemos_license.json file. Here we will look for it in the %LOCALAPPDATA%\\Cubemos\\SkeletonTracking\\license folder.
+    
+    // Create cubemos Skeleton tracking Api handle and specify the valid cubemos activation key file folder   
+    Cubemos.SkeletonTracking.Api skeletontrackingApi = new Cubemos.SkeletonTracking.Api(Common.DefaultLicenseDir());                
+    // Initialise cubemos DNN framework with the required deep learning model and the target compute device
+    // FP32 model is necessary for the CPU device
+    skeletontrackingApi.LoadModel(Cubemos.Target_Compute_Device.CM_TCD_CPU, Common.DefaultModelDir() + "\\fp32\\skeleton-tracking.cubemos");        
+\endcode    
+
+
+Once the Skeleton Tracking pipeline is initialized, the inference can be called on the input color frame after which 
+the results can be extracted like this: 
+\code
+    // Wait for images from RealSense
+    var frames = pipeline.WaitForFrames();
+    // Get the color frame from the intel realsense
+    var colorFrame = frames.ColorFrame.DisposeWith(frames);
+    // Convert the input image to a bitmap
+    Bitmap inputImage = FrameToBitmap(colorFrame);
+
+    // Run the inference on the preprocessed image
+    List<SkeletonKeypoints> skeletonKeypoints;
+    skeletontrackingApi.RunInference(ref inputImage, networkHeight, out skeletonKeypoints);       
+\endcode
+
+The skeletons are a list of image coordinates of the keypoints detected for each person inside the input image. 
+Based on these keypoints, the overlays are drawn and finally rendered to the output image which is then displayed to the user. \n 
+
+\section csharp_skeletontracking_demo_skel_3d Skeleton Tracking in 3D
+3D skeleton tracking is not directly part of the cubemos Api, however in this sample we also show how to calculate 3D positions of skeleton joints with the help 
+of an Intel&reg; RealSense&trade; Camera.\n
+Skeleton joints are returned from the api as a set of 2D pixel coordinates. In order to compute the 3D position for these joints there are two major steps to be done.
+ -# For each pixel coordinate in the color image we have to find the corresponding pixel coordinate in the depth image.
+ -# For each joint we have to calculate the 3D Coordinate by using the depth and the pixel coordinate in the depth image.
+
+Step 1:
+    The C# wrapper of the realsense library allows for the alignment of the color and depth stream. When we make use of this feature, pixel coordinates of the depth
+    image and the color image are directly equivalent.
+\code
+    // create the alignment object to the color stream
+    var align = new Align(Intel.RealSense.Stream.Color);
+    // Wait for images from RealSense
+    var frames = pipeline.WaitForFrames()
+    // Align all frames to the color frame
+    var processedFrames = frames.ApplyFilter(align).DisposeWith(frames);
+    // Get the aligned depth frame
+    var depthFrame = processedFrames.DepthFrame.DisposeWith(frames);
+\endcode
+
+Step 2:
+    For every skeleton joint we get from the api, we first extract the corresponding depth values from the depth image.
+\code
+    List<SkeletonKeypoints> skeletons = ...; //computed earlier
+    foreach (var skeleton in skeletons)
+        {
+            foreach (Coordinate coordinate in skeleton.listJoints)
+            {
+                // retrieve depth values in local neighbourhood of coordinate
+                float[,] depthValues = DepthMapHelpers.getDepthInKernel(depthFrame, (int)coordinate.x, (int)coordinate.y, nKernelSize: 5);
+                // Averaging over the local neighbourhood improves stability 
+                float averageDepth = DepthMapHelpers.averageValidDepthFromNeighbourhood(depthValues);
+                ...
+\endcode
+    With the depth value and the intrinsic parameters of the depth camera we can then compute the 3D coordinate. Have a look at
+    the function "DepthMapHelpers.WorldCoordinate" if you are interested in the details.
+\code 
+                ...
+                System.Windows.Media.Media3D.Point3D worldCoordinates = 
+                        DepthMapHelpers.WorldCoordinate(averageDepth, (int)coordinate.x, (int)coordinate.y, intrinsicsDepthImagerMaster.fx, 
+                                                        intrinsicsDepthImagerMaster.fy, intrinsicsDepthImagerMaster.ppx, intrinsicsDepthImagerMaster.ppy);
+\endcode
+
+The full source code of this sample is provided in
+\%CUBEMOS_SKEL_SDK%\samples\csharp\interactive\
+
+*/
